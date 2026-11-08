@@ -1,0 +1,6 @@
+# boundary's main is what every workspace's guards run once pulled, so pushes that could reach it
+# are the user's: any refspec whose destination is main or HEAD (main, +main, x:main,
+# HEAD:refs/heads/main, HEAD) and a push that names no branch. Pushing a named branch for a pull
+# request stays open. GitHub branch protection would hold even against a reworded push.
+pushing to main: ([^[:space:];&|]*/)?git([[:space:]]+-[Cc][[:space:]]+[^[:space:];&|]+)*[[:space:]]+push([[:space:]]+[^[:space:];&|]+)*[[:space:]]+\+?([^[:space:];&|:]*:)?(refs/heads/)?(main|HEAD)([[:space:]]|$)
+pushing without naming a branch: ([^[:space:];&|]*/)?git([[:space:]]+-[Cc][[:space:]]+[^[:space:];&|]+)*[[:space:]]+push([[:space:]]+-[^[:space:];&|]+)*([[:space:]]+[^-[:space:];&|][^[:space:];&|]*)?[[:space:]]*($|[;&|])

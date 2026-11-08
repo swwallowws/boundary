@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Buttons with real effects</title>
+<style>
+  body { font: 16px system-ui; margin: 24px; max-width: 320px; }
+  button { width: 110px; }
+</style>
+<!-- Send would write to a server: the check must hold the request back and name it. Delete is
+     marked data-no-press: pressing it would push the page down, so this page passes only if the
+     check never presses it. -->
+<button id="send">Send</button>
+<button id="delete" data-no-press>Delete</button>
+<p id="status">Ready.</p>
+<p>Below everything.</p>
+<script>
+  document.getElementById("send").onclick = () => {
+    fetch("https://example.invalid/messages", { method: "POST", body: "hello" }).catch(() => {});
+  };
+  document.getElementById("delete").onclick = () => {
+    document.getElementById("status").textContent = "Deleted, and here is a long line that wraps and pushes the page down.";
+  };
+</script>

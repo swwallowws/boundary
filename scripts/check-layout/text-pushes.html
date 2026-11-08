@@ -1,0 +1,17 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Text that pushes</title>
+<style>
+  body { font: 16px system-ui; margin: 24px; max-width: 320px; }
+  button { width: 110px; }
+</style>
+<!-- Changing text with no room kept for it: the status wraps onto more lines and pushes the
+     paragraph below it down. -->
+<button id="save">Save</button>
+<p id="status">Ready.</p>
+<p>Below everything.</p>
+<script>
+  document.getElementById("save").onclick = () => {
+    document.getElementById("status").textContent = "Saved, and here is a much longer line about what happened that wraps.";
+  };
+</script>

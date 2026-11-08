@@ -1,0 +1,33 @@
+# Every hook's cases and init.sh, on Linux and on macOS (bash 3 and BSD tools), on each pull
+# request and each push to main.
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: ./test.sh
+
+  # The hooks are the guards. Quoting slips are what turn a guard into a hole. Ubuntu's
+  # runner ships shellcheck. Warnings and errors fail; info-level notes don't, since the hooks
+  # match `$(`, backticks and `;&|` as text and quote them that way on purpose (SC2016, SC2020).
+  shellcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: shellcheck --version
+      - run: shellcheck --shell=bash --severity=warning ./*.sh hooks/*.sh scripts/*.sh

@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Holds still</title>
+<style>
+  body { font: 16px system-ui; margin: 24px; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  button { width: 110px; }
+  .count { display: inline-block; width: 6ch; font-variant-numeric: tabular-nums; }
+  .status { height: 1.4em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+</style>
+<!-- Text changes in every step, and nothing moves: fixed widths, reserved space, one line. -->
+<div class="controls">
+  <button id="go">Go</button>
+  <button id="back">Back</button>
+  <input id="p" type="range" min="0" max="1" step="0.01" value="0" aria-label="How far">
+</div>
+<p>Count: <span class="count" id="count">0</span></p>
+<p class="status" id="status">Ready.</p>
+<p>Below everything.</p>
+<p class="toast" data-moves id="toast"></p>
+<script>
+  const count = document.getElementById("count");
+  const status = document.getElementById("status");
+  const toast = document.getElementById("toast");
+  document.getElementById("go").onclick = () => { status.textContent = "Going all the way out to the edge of the garden and further."; toast.textContent = "A note that is allowed to move things around it."; };
+  document.getElementById("back").onclick = () => { status.textContent = "Back."; toast.textContent = ""; };
+  document.getElementById("p").oninput = (e) => { count.textContent = Math.round(e.target.value * 1000); };
+</script>
