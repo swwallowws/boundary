@@ -131,6 +131,10 @@ and November 2026, with Claude Code and Opus 5.5:
   README claiming more than the tests held, in several places.
 - **A CI check that could never find a pull request's run.** `wait-ci.mjs` listed only main's
   runs, so asking about a pull request's commit always said "no run found".
+- **A green run that belonged to main.** Asked about `--sha HEAD` from a branch, `wait-ci.mjs`
+  passed `HEAD` to GitHub, which reads it as its default branch. It reported main's green run as
+  the branch's. A name is now resolved in the checkout it was typed in, and a test with a
+  stand-in `gh` holds it.
 - **A button that changed its mind halfway.** In two projects' studies, a play button renamed
   itself ("Go" to "Come back") as a slider passed its middle, and its new width shoved the slider
   sideways. The user read it as the page breaking. `check-layout.mjs` now drives every control

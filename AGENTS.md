@@ -61,9 +61,15 @@ comes from someone's work. Check: manual.
 `$(`, backticks or `;&|` in single quotes are the hooks matching those as text, on purpose.
 Check: CI's shellcheck job.
 
+**main requires three checks by name: `test (ubuntu-latest)`, `test (macos-latest)` and
+`shellcheck`.** Renaming or removing one of those jobs leaves GitHub waiting for the old name, so no
+pull request can merge. Change main's protection in the same step. Path filters work only at job
+level (`if:`), whose skipped jobs count as passing; workflow-level `paths:` never reports and blocks
+the same way. Check: a pull request touching `.github/workflows/` shows all three checks.
+
 ## Checks
 
 | Changed | Run |
 |---|---|
 | anything | `./test.sh` |
-| `scripts/wait-ci.mjs` | `node scripts/wait-ci.mjs --sha <a PR's commit> <owner/repo>` finds its run |
+| `scripts/wait-ci.mjs` | `scripts/wait-ci.test.sh` (in `./test.sh`), then `node scripts/wait-ci.mjs --sha <a PR's commit> <owner/repo>` finds its run on GitHub |
