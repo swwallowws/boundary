@@ -73,3 +73,4 @@ the same way. Check: a pull request touching `.github/workflows/` shows all thre
 |---|---|
 | anything | `./test.sh` |
 | `scripts/wait-ci.mjs` | `scripts/wait-ci.test.sh` (in `./test.sh`), then `node scripts/wait-ci.mjs --sha <a PR's commit> <owner/repo>` finds its run on GitHub |
+| `scripts/merge-when-green.sh` | `scripts/merge-when-green.test.sh` (in `./test.sh`) |

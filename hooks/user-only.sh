@@ -4,7 +4,8 @@
 # the user runs themselves with `!` don't pass through here. A JSON file as the first argument
 # stands in for stdin when testing; user-only.test.sh holds the cases.
 #
-# Merging a pull request is always the user's. Anything else (deploys, releases, pushes to a
+# Merging a pull request is always the user's, through gh or boundary's own
+# scripts/merge-when-green.sh. Anything else (deploys, releases, pushes to a
 # public repo) is listed in a `.claude/user-only` file. Lists are read from the folder the session
 # started in ($CLAUDE_PROJECT_DIR), from the repository the command runs in, from any repository
 # it names with `git -C`, from a worktree's main checkout and from every folder above these. So
@@ -36,7 +37,8 @@ at_start="(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?(${assign})*((env|command|exec
 gh='([^[:space:];&|]*/)?gh'
 
 if printf '%s' "$command" | grep -Eq "${at_start}${gh}[[:space:]]+pr[[:space:]]+merge([[:space:]]|\$)" ||
-   printf '%s' "$command" | grep -Eq "${at_start}${gh}[[:space:]]+api[[:space:]][^;&|]*(pulls/[0-9]+/merge|mergePullRequest)"; then
+   printf '%s' "$command" | grep -Eq "${at_start}${gh}[[:space:]]+api[[:space:]][^;&|]*(pulls/[0-9]+/merge|mergePullRequest)" ||
+   printf '%s' "$command" | grep -Eq "${at_start}([^[:space:];&|]*/)?merge-when-green\.sh([[:space:]]|\$)"; then
   refuse "merging is the user's. Give them the exact command to run."
 fi
 
