@@ -38,7 +38,7 @@ user pulls it.
 
 ## Requirements
 
-- R1. Merging a pull request is always the user's, plain or as `gh api` calls. Check: `hooks/user-only.test.sh` ("Merging, always")
+- R1. Merging a pull request is always the user's, plain, as `gh api` calls or through `scripts/merge-when-green.sh`. Check: `hooks/user-only.test.sh` ("Merging, always")
 - R2. A listed command is the user's however it starts: plain or after `sudo`, `env`, an assignment or `nohup`. The same holds when `bash`, `sh -c` or `zsh -c` runs it. Check: `hooks/user-only.test.sh` ("Run through a shell or a wrapper")
 - R3. Lists apply from the workspace above a project and from the repository a command runs in. Outside both they don't. Check: `hooks/user-only.test.sh` ("Listed in the workspace", "Listed in the repository the command runs in", "Outside the workspace")
 - R4. A repository's list follows `git -C` and its worktrees. Check: `hooks/user-only.test.sh` ("A repository whose list makes pushing the user's")
@@ -52,6 +52,7 @@ user pulls it.
 - R12. `init.sh` never overwrites a project's files. Check: `init.test.sh`
 - R13. A workspace runs the hooks from a pinned copy only the user updates. Check: manual: the workspace's own probes of its wiring, since the pinned copy lives outside this repo
 - R14. A hook that can't read its call refuses it. Check: the "Without jq" case in each hook's test file
+- R15. `merge-when-green.sh` merges only once every run on the pull request's head is green, with a merge commit, and keeps a branch another open pull request is based on. A repository with no workflows merges with a note that nothing checked it. Check: `scripts/merge-when-green.test.sh`
 
 ## Passes
 

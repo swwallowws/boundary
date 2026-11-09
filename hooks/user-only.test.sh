@@ -42,6 +42,14 @@ check blocked "$tmp" 'git status && gh pr merge 1'
 check blocked "$tmp" '/opt/homebrew/bin/gh pr merge 1 --squash'
 check blocked "$tmp" 'gh api -X PUT repos/a/b/pulls/1/merge'
 check blocked "$tmp" 'gh api graphql -f query="mutation { mergePullRequest(input: {}) { clientMutationId } }"'
+check blocked "$tmp" 'scripts/merge-when-green.sh 12 a/b'
+check blocked "$tmp" '/home/u/.claude/boundary-live/scripts/merge-when-green.sh 12 a/b'
+check blocked "$tmp" 'bash scripts/merge-when-green.sh 12 a/b'
+check blocked "$tmp" 'git status; merge-when-green.sh 12 a/b'
+check allowed "$tmp" 'bash scripts/merge-when-green.test.sh'
+check allowed "$tmp" 'shellcheck scripts/merge-when-green.sh'
+# Text matching errs on the safe side: a quoted pattern after a pipe reads as a command.
+check blocked "$tmp" 'grep -E "x|merge-when-green.sh 1" log'
 
 # Listed in the workspace, above the project.
 check blocked "$main" 'nix run .#deploy'

@@ -23,6 +23,7 @@ There is nothing to install. Clone it once and point your projects at it.
 | `scripts/spec-checks.sh` | Lists a design doc's requirements that name no check. Fails if there are any. |
 | `scripts/check-layout.mjs` | Uses a page in headless Chrome (every slider, every button) and fails when changing text or a control moves or resizes anything else. |
 | `scripts/wait-ci.mjs` | Waits for a commit's CI, on main or a pull request, before anyone says it works. |
+| `scripts/merge-when-green.sh` | Merges a pull request once its CI is green, keeping a branch another pull request builds on. Yours to run: the hook turns it away from agents. |
 | `init.sh` | Sets a project up: an `AGENTS.md` from the template and the hooks in `.claude/settings.json`. Never overwrites. |
 
 Every hook has its test cases next to it. `./test.sh` runs them all. CI runs them on Linux and
@@ -135,6 +136,11 @@ and November 2026, with Claude Code and Opus 5.5:
   passed `HEAD` to GitHub, which reads it as its default branch. It reported main's green run as
   the branch's. A name is now resolved in the checkout it was typed in, and a test with a
   stand-in `gh` holds it.
+- **A merge that closed the next pull request.** Two pull requests were stacked, the second
+  based on the first's branch. Merging the first with `--delete-branch` deleted that base, and
+  GitHub closed the second instead of moving it to main. `merge-when-green.sh` keeps a branch
+  another pull request builds on. It exists because private repositories can't require checks
+  without a paid plan, so nothing stopped a merge on red CI either.
 - **A button that changed its mind halfway.** In two projects' studies, a play button renamed
   itself ("Go" to "Come back") as a slider passed its middle, and its new width shoved the slider
   sideways. The user read it as the page breaking. `check-layout.mjs` now drives every control
