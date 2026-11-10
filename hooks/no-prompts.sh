@@ -41,6 +41,11 @@ fi
 if printf '%s' "$unquoted" | grep -Eq '((^|[;&|(])[[:space:]]*|(-exec|xargs)[[:space:]]+)([^[:space:]]*/)?g?sed([[:space:]]|$)'; then
   refuse "sed (read with the Read tool, change files with Edit or Write)."
 fi
+# Inline JavaScript (node -e or -p, deno eval, bun -e) can't be checked against the read block
+# either, so it always asks. A script file run by its path is fine.
+if printf '%s' "$unquoted" | grep -Eq '(^|[;&|(])[[:space:]]*([^[:space:]]*/)?((node|nodejs|bun)([[:space:]]+-[^[:space:]]+)*[[:space:]]+(-(e|p|pe|ep)|--eval|--print)([[:space:]=]|$)|deno[[:space:]]+eval([[:space:]]|$))'; then
+  refuse "inline JavaScript (node -e, node -p, deno eval or bun -e)."
+fi
 if printf '%s' "$command" | grep -q '\$('; then
   refuse "command substitution (\$(...))."
 fi

@@ -29,7 +29,8 @@ settings-reference.md.
 4. **Commands must be parseable.** Otherwise the checker asks the user. Never use heredocs (`<<EOF`),
    `$(...)` or backticks, process substitution, `for`/`while` loops, backslash line
    continuations or quotes nested in quotes. Anything longer than one line goes in a script
-   file, run by its path. No `python -c`.
+   file, run by its path. No `python -c`, and no inline JavaScript (`node -e`, `node -p`,
+   `deno eval`, `bun -e`): the hook turns both away.
    - `gh api repos/...` prompts too: the checker reads the endpoint as a path it cannot verify.
      For GitHub metadata use `gh repo view`, `gh run list` or a script that calls `gh api`.
 5. **Commit messages:** one `git commit` call with one `-m "..."` flag per paragraph.
