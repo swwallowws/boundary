@@ -18,7 +18,8 @@ settings-reference.md.
    points outside the project, so never list or read inside `.venv`; only run its commands. Keep
    one venv per project at `.venv` and allowlist it.
 2. **Use the file tools** (Read, Edit, Write, Grep) instead of cat, head, tail, sed, awk or
-   echo-redirects. They are pre-approved inside the working directories.
+   echo-redirects. They are pre-approved inside the working directories. Never `sed`, to read
+   lines or to change them: it can touch any file, so it always asks. The hook turns it away.
 3. **One plain command per Bash call.** Compound commands are split at `&&`, `||`, `;`, `|`, `&`
    and newlines. Every part must match an allow rule on its own, so a compound usually prompts.
    - Never prefix with `cd dir &&`. Use project-relative paths or `git -C <path>`.

@@ -35,6 +35,13 @@ check blocked 'git commit -m "uses `x`"'
 check blocked 'diff <(ls a) <(ls b)'
 check blocked '.venv/bin/python -c "print(1)"'
 check blocked 'python3 -Ic "print(1)"'
+check blocked "sed -i '' 's/a/b/' file.js"
+check blocked 'sed -n 1,20p file.js'
+check blocked 'gsed -i s/a/b/ file.js'
+check blocked '/usr/bin/sed -n 3p file.js'
+check blocked 'git status; sed -n 1p a'
+check blocked 'find . -name x -exec sed -i s/a/b/ {} +'
+check blocked 'xargs sed -i s/a/b/'
 
 check allowed 'python3 scripts/check.py'
 check allowed 'python3 -I scripts/check.py'
@@ -45,6 +52,9 @@ check allowed 'echo $HOME'
 check allowed "git commit -m 'uses \`x\` and <(y)'"
 check allowed 'python3 -m pytest -c setup.cfg'
 check allowed '.venv/bin/python scripts/run.py'
+check allowed 'git commit -m "sed is blocked now"'
+check allowed 'grep -n used file.txt'
+check allowed 'ls based'
 
 # Without jq the hook refuses instead of reading nothing and letting the call through.
 mkdir -p "$tmp/nojq"

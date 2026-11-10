@@ -36,6 +36,11 @@ fi
 if printf '%s' "$command" | grep -q '/dev/null'; then
   refuse "/dev/null (write scratch output to a file in the project's scratch folder instead)."
 fi
+# sed can read or write any file, so the read block can't check it and it always asks. As a
+# command (also after -exec or xargs, by any path), never as a word inside a message.
+if printf '%s' "$unquoted" | grep -Eq '((^|[;&|(])[[:space:]]*|(-exec|xargs)[[:space:]]+)([^[:space:]]*/)?g?sed([[:space:]]|$)'; then
+  refuse "sed (read with the Read tool, change files with Edit or Write)."
+fi
 if printf '%s' "$command" | grep -q '\$('; then
   refuse "command substitution (\$(...))."
 fi
