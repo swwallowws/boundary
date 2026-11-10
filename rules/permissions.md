@@ -18,7 +18,8 @@ settings-reference.md.
    points outside the project, so never list or read inside `.venv`; only run its commands. Keep
    one venv per project at `.venv` and allowlist it.
 2. **Use the file tools** (Read, Edit, Write, Grep) instead of cat, head, tail, sed, awk or
-   echo-redirects. They are pre-approved inside the working directories.
+   echo-redirects. They are pre-approved inside the working directories. Never `sed`, to read
+   lines or to change them: it can touch any file, so it always asks. The hook turns it away.
 3. **One plain command per Bash call.** Compound commands are split at `&&`, `||`, `;`, `|`, `&`
    and newlines. Every part must match an allow rule on its own, so a compound usually prompts.
    - Never prefix with `cd dir &&`. Use project-relative paths or `git -C <path>`.
@@ -28,7 +29,8 @@ settings-reference.md.
 4. **Commands must be parseable.** Otherwise the checker asks the user. Never use heredocs (`<<EOF`),
    `$(...)` or backticks, process substitution, `for`/`while` loops, backslash line
    continuations or quotes nested in quotes. Anything longer than one line goes in a script
-   file, run by its path. No `python -c`.
+   file, run by its path. No `python -c`, and no inline JavaScript (`node -e`, `node -p`,
+   `deno eval`, `bun -e`): the hook turns both away.
    - `gh api repos/...` prompts too: the checker reads the endpoint as a path it cannot verify.
      For GitHub metadata use `gh repo view`, `gh run list` or a script that calls `gh api`.
 5. **Commit messages:** one `git commit` call with one `-m "..."` flag per paragraph.
