@@ -28,7 +28,9 @@ the notes live, names, writing style.
   between outcomes.
 - When the user agrees to a subset of what you proposed, do only that subset.
 - When the user points to an image or message they already sent, treat it as the spec.
-- The user runs merges and deploys. Give the exact commands. The `user-only` hook holds this.
+- The user runs merges and deploys. Give the exact commands. The `user-only` hook holds this. To
+  land a pull request, the command is `<boundary>/scripts/merge-when-green.sh <number> <owner/repo>`:
+  it waits for green CI and deletes the branch on origin.
 - Never modify a production database on your own initiative. Only when asked, in that moment.
 
 ## Sessions and agents
@@ -49,6 +51,15 @@ the notes live, names, writing style.
 - The body says why: what was wrong, what changed and what you ruled out.
 - End the body with what ran, with numbers ("Ran: cargo test, 212 pass"). Then name what wasn't
   tested.
+
+## Finishing
+
+- Work isn't done while it leaves things behind. Once it has landed, run
+  `<boundary>/scripts/leftovers.sh <checkout>...` on every repository it touched. Remove the
+  worktrees and local branches it lists, stop the servers and background tasks you started and
+  delete your scratch scripts. A worktree it says holds ignored files gets a look first, since
+  removing it deletes them. Deleting a branch on origin is a push, so give the user those
+  commands. Say it's done when the script prints "nothing left" for each repository.
 
 ## Specs
 
