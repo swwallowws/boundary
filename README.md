@@ -24,7 +24,7 @@ There is nothing to install. Clone it once and point your projects at it.
 | `scripts/check-layout.mjs` | Uses a page in headless Chrome (every slider, every button) and fails when changing text or a control moves or resizes anything else. |
 | `scripts/wait-ci.mjs` | Waits for a commit's CI, on main or a pull request, before anyone says it works. |
 | `scripts/merge-when-green.sh` | Merges a pull request once its CI is green, keeping a branch another pull request builds on. Yours to run: the hook turns it away from agents. |
-| `scripts/check-workflows.mjs` | Fails when a GitHub Actions job that runs on a self-hosted runner is given a secret, since a runner kept between jobs lets one job's leftovers read the next one's. Run it in each repository's CI. |
+| `scripts/check-workflows.mjs` | Fails when a GitHub Actions job that may run on a self-hosted runner is given a secret, since a runner kept between jobs lets one job's leftovers read the next one's. Any runner that isn't a GitHub-hosted label counts as self-hosted. Run it in each repository's CI. Reads YAML with a vendored parser (`scripts/vendor/`). |
 | `scripts/leftovers.sh` | Lists what landed work left behind (worktrees, local branches, branches on origin) with the command that removes each. Fails while anything is left. |
 | `init.sh` | Sets a project up: an `AGENTS.md` from the template and the hooks in `.claude/settings.json`. Never overwrites. |
 
@@ -158,7 +158,10 @@ and November 2026, with Claude Code and Opus 5.5:
   so a process a test job left behind could have read that token. The deploy went back to a
   hosted runner, and the rule lived only in a comment until `check-workflows.mjs` made it a
   failing check in each repository's CI. Run on the earlier workflow, it names the job and the
-  secret.
+  secret. Its first version read YAML as lines and looked for the word "self-hosted". A fresh
+  agent asked to get a secret past it found 20 ways, from a custom runner label to YAML anchors,
+  and 3 ordinary workflows it failed wrongly. It now parses the YAML and treats every runner
+  that isn't a GitHub-hosted label as self-hosted. All 23 are test cases.
 
 These are anecdotes from one author's work. Nothing here is a controlled measurement.
 
