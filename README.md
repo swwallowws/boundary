@@ -13,7 +13,7 @@ There is nothing to install. Clone it once and point your projects at it.
 
 | Part | What it does |
 |---|---|
-| `rules/workspace.md` | Working rules for every project: checking, scope, sessions, commits, specs, where a rule lives, guards and shared docs. Imported by a workspace's `CLAUDE.md`. |
+| `rules/workspace.md` | Working rules for every project: checking, scope, sessions, commits, finishing, specs, where a rule lives, guards and shared docs. Imported by a workspace's `CLAUDE.md`. |
 | `rules/permissions.md` | How to run commands so none of them stops on a permission prompt. |
 | `templates/AGENTS.md` | A repo's map, the rules a change can break with no visible error and the checks to run per path. |
 | `hooks/no-prompts.sh` | Turns away commands that would stop on a prompt (heredocs, `$(...)`, env-var prefixes...) before the prompt reaches you. |
@@ -24,6 +24,7 @@ There is nothing to install. Clone it once and point your projects at it.
 | `scripts/check-layout.mjs` | Uses a page in headless Chrome (every slider, every button) and fails when changing text or a control moves or resizes anything else. |
 | `scripts/wait-ci.mjs` | Waits for a commit's CI, on main or a pull request, before anyone says it works. |
 | `scripts/merge-when-green.sh` | Merges a pull request once its CI is green, keeping a branch another pull request builds on. Yours to run: the hook turns it away from agents. |
+| `scripts/leftovers.sh` | Lists what landed work left behind (worktrees, local branches, branches on origin) with the command that removes each. Fails while anything is left. |
 | `init.sh` | Sets a project up: an `AGENTS.md` from the template and the hooks in `.claude/settings.json`. Never overwrites. |
 
 Every hook has its test cases next to it. `./test.sh` runs them all. CI runs them on Linux and
@@ -141,6 +142,12 @@ and November 2026, with Claude Code and Opus 5.5:
   GitHub closed the second instead of moving it to main. `merge-when-green.sh` keeps a branch
   another pull request builds on. It exists because private repositories can't require checks
   without a paid plan, so nothing stopped a merge on red CI either.
+- **Branches nobody deleted.** One round of work landed its pull requests across seven
+  repositories with plain `gh pr merge`, and every branch stayed behind, on GitHub and locally.
+  A cleanup by hand afterwards removed 15. A first run of `leftovers.sh` then found 10 more
+  landed branches that the hand cleanup had missed, several from that same session. Finishing
+  is a rule now. The script is its check, and `merge-when-green.sh` is the land command, since
+  it deletes the branch itself.
 - **A button that changed its mind halfway.** In two projects' studies, a play button renamed
   itself ("Go" to "Come back") as a slider passed its middle, and its new width shoved the slider
   sideways. The user read it as the page breaking. `check-layout.mjs` now drives every control

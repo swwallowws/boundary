@@ -24,8 +24,9 @@ for; this file is for working on it.
 - `templates/design.md`: the design-doc shape; `scripts/spec-checks.sh` (with its test) checks
   every requirement names a check
 - `hooks/<name>.sh` and `hooks/<name>.test.sh`: each hook with its cases
-- `scripts/`: `wait-ci.mjs` (CI before "done"), `link-status.sh` and `check-layout.mjs` (a page
-  holds still while it's used; its test pages are in `scripts/check-layout/`)
+- `scripts/`: `wait-ci.mjs` (CI before "done"), `leftovers.sh` (nothing left behind after
+  "done"), `link-status.sh` and `check-layout.mjs` (a page holds still while it's used; its test
+  pages are in `scripts/check-layout/`)
 - `init.sh`, `init.test.sh`: setting a project up
 - `test.sh`: runs every test; CI (`.github/workflows/checks.yml`) runs it on Linux and macOS
 - `.claude/user-only`: this repo's own list. Pushes to main are the user's; push a named branch
@@ -74,3 +75,4 @@ the same way. Check: a pull request touching `.github/workflows/` shows all thre
 | anything | `./test.sh` |
 | `scripts/wait-ci.mjs` | `scripts/wait-ci.test.sh` (in `./test.sh`), then `node scripts/wait-ci.mjs --sha <a PR's commit> <owner/repo>` finds its run on GitHub |
 | `scripts/merge-when-green.sh` | `scripts/merge-when-green.test.sh` (in `./test.sh`) |
+| `scripts/leftovers.sh` | `scripts/leftovers.test.sh` (in `./test.sh`), on throwaway repositories with a local origin |
