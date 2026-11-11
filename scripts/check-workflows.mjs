@@ -9,18 +9,20 @@
 //
 // It errs toward failing:
 // - A job counts as hosted only when every runner it could get is one GitHub-hosted label on its
-//   own (ubuntu-24.04, macos-latest, windows-2025 and the like), with a matrix's values,
-//   including its include entries, resolved. Anything else may be self-hosted: a custom label, a
-//   label list, a runner group, any other expression.
-// - A secret is any mention of the secrets context inside an expression (${{ }} anywhere, and
-//   every if:), in any case, except GITHUB_TOKEN, which every job gets anyway. A reusable
+//   own (an exact list, below), with a matrix's values, including its include entries,
+//   resolved. Anything else may be self-hosted: a custom label, a label list, a runner group,
+//   any other expression, an include that is or holds one.
+// - A secret is any mention of the secrets context after a ${{ in any key or value, or in any
+//   if:, in any case, except GITHUB_TOKEN, which every job gets anyway. A reusable
 //   workflow call that passes secrets (secrets: inherit or a mapping) fails unless it calls a
 //   workflow in this repository whose jobs are all hosted.
 // - A file that isn't valid YAML, or has no jobs, fails.
 // The YAML is read by a real parser (vendored js-yaml), so anchors, aliases, quoting and flow
 // style resolve as GitHub reads them.
 //
-// Out of its reach: a hosted job handing a secret on through outputs, artifacts or a cache.
+// Out of its reach: a hosted job handing a secret on through outputs, artifacts or a cache; and
+// a self-hosted runner given a hosted label (GitHub's docs don't say where such a job would go),
+// so never give a self-hosted runner one.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -33,16 +35,18 @@ if (!existsSync(dir)) {
   process.exit(0);
 }
 
-// GitHub-hosted standard runner labels. Larger runners have names their owners choose, so they
-// count as maybe self-hosted.
-const HOSTED = [
-  /^ubuntu-(latest|slim|\d{2}\.\d{2})(-arm)?$/i,
-  /^windows-(latest|\d{4})$/i,
-  /^windows-11-arm$/i,
-  /^macos-(latest|\d+)(-intel|-large|-xlarge)?$/i,
-  /^macos-latest-(large|xlarge)$/i,
-];
-const isHostedLabel = (label) => typeof label === "string" && HOSTED.some((re) => re.test(label.trim()));
+// GitHub-hosted standard runner labels, exactly as docs.github.com lists them (Actions,
+// GitHub-hosted runners, read 2026-11-11). Labels are case-insensitive. Anything else counts as
+// maybe self-hosted, larger runners included, since their owners name them. Update this list
+// when GitHub adds an image; until then a job on a new label fails here, which is the safe way.
+const HOSTED = new Set([
+  "ubuntu-slim", "ubuntu-latest", "ubuntu-26.04", "ubuntu-24.04", "ubuntu-22.04",
+  "ubuntu-26.04-arm", "ubuntu-24.04-arm", "ubuntu-22.04-arm",
+  "windows-latest", "windows-2025", "windows-2025-vs2026", "windows-2022",
+  "windows-11-arm", "windows-11-vs2026-arm",
+  "macos-latest", "macos-26", "macos-15", "macos-26-intel", "macos-15-intel", "xcode-27",
+]);
+const isHostedLabel = (label) => typeof label === "string" && HOSTED.has(label.trim().toLowerCase());
 // One label on its own, as a string or a one-element list, is the only shape that's hosted.
 const isHostedRunsOn = (value) =>
   isHostedLabel(value) || (Array.isArray(value) && value.length === 1 && isHostedLabel(value[0]));
@@ -61,8 +65,13 @@ function possibleRunsOn(job) {
     if (!Array.isArray(matrix[key])) return null;
     values.push(...matrix[key]);
   }
-  for (const entry of Array.isArray(matrix.include) ? matrix.include : []) {
-    if (entry && typeof entry === "object" && key in entry) values.push(entry[key]);
+  // An include that's an expression, or holds one, can add any runner: it can't be placed.
+  if (matrix.include !== undefined) {
+    if (!Array.isArray(matrix.include)) return null;
+    for (const entry of matrix.include) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+      if (key in entry) values.push(entry[key]);
+    }
   }
   if (!values.length || values.some((v) => /\$\{\{/.test(JSON.stringify(v)))) return null;
   return values;
@@ -73,18 +82,28 @@ const isHosted = (job) => {
 };
 const describe = (job) => (job["runs-on"] === undefined ? "no runs-on" : `runs-on: ${JSON.stringify(job["runs-on"])}`);
 
-// Every expression in a value: each ${{ }} in its strings, and each if: whole.
+// The expression text in a value, keys included (GitHub evaluates expressions in some keys): for
+// each string, everything after its first ${{ (a }} inside a quoted string doesn't end an
+// expression for GitHub, so this doesn't try to find where one ends), and each if: whole.
 function expressions(value, out = [], key = "") {
-  if (typeof value === "string") {
-    if (key === "if") out.push(value);
-    for (const m of value.matchAll(/\$\{\{([\s\S]*?)\}\}/g)) out.push(m[1]);
-  } else if (Array.isArray(value)) value.forEach((v) => expressions(v, out));
-  else if (value && typeof value === "object") for (const [k, v] of Object.entries(value)) expressions(v, out, k);
+  const scan = (s, isIf) => {
+    if (isIf) out.push(s);
+    const at = s.indexOf("${{");
+    if (at >= 0) out.push(s.slice(at + 3));
+  };
+  if (typeof value === "string") scan(value, key === "if");
+  else if (Array.isArray(value)) value.forEach((v) => expressions(v, out));
+  else if (value && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) {
+      scan(k, false);
+      expressions(v, out, k);
+    }
+  }
   return out;
 }
 const GITHUB_TOKEN = /\bsecrets\s*(\.\s*github_token\b|\[\s*['"]github_token['"]\s*\])/gi;
 const secretsIn = (value) =>
-  [...new Set(expressions(value).map((e) => e.replace(GITHUB_TOKEN, "").trim()).filter((e) => /\bsecrets\b/i.test(e)))];
+  [...new Set(expressions(value).map((e) => e.replace(GITHUB_TOKEN, "").replace(/\}\}\s*$/, "").trim()).filter((e) => /\bsecrets\b/i.test(e)))];
 
 const files = readdirSync(dir).filter((f) => /\.ya?ml$/i.test(f)).sort();
 const parsed = new Map();
@@ -121,7 +140,9 @@ for (const [file, doc] of parsed) {
       continue;
     }
     if (job.uses !== undefined) {
-      const passes = job.secrets === "inherit" || secretsIn(job.secrets ?? {}).length || everyJob.length;
+      // A caller's workflow-level env doesn't reach the called workflow (GitHub docs, reusing
+      // workflows), so only what the call itself passes counts.
+      const passes = job.secrets === "inherit" || secretsIn(job.secrets ?? {}).length || secretsIn(job.with ?? {}).length;
       if (passes && !callsOnlyHosted(job.uses)) {
         problems.push(`${where}: job ${name} passes secrets to ${job.uses}, which may run on a self-hosted runner`);
       }

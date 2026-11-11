@@ -85,6 +85,39 @@ jobs:
 EOF
 passes local-call-hosted "secrets: inherit to a local workflow whose jobs are all hosted"
 
+workflow new-labels <<'EOF'
+jobs:
+  win:
+    runs-on: windows-2025-vs2026
+    env: {T: "${{ secrets.T }}"}
+    steps: [{run: ./a.ps1}]
+  winarm:
+    runs-on: windows-11-vs2026-arm
+    env: {T: "${{ secrets.T }}"}
+    steps: [{run: ./a.ps1}]
+  xcode:
+    runs-on: xcode-27
+    env: {T: "${{ secrets.T }}"}
+    steps: [{run: ./a.sh}]
+  upper:
+    runs-on: UBUNTU-LATEST
+    env: {T: "${{ secrets.T }}"}
+    steps: [{run: ./a.sh}]
+EOF
+passes new-labels "current hosted labels from GitHub's list, and one in capitals"
+
+workflow env-not-passed <<'EOF'
+env:
+  KEY: ${{ secrets.API_KEY }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps: [{run: ./build.sh}]
+  call:
+    uses: some-org/infra/.github/workflows/lint.yml@0123456789012345678901234567890123456789
+EOF
+passes env-not-passed "a workflow-level env secret beside a reusable call that passes none"
+
 mkdir -p "$tmp/none"
 passes none "a repository with no workflows"
 node "$script" "$here/.." >"$tmp/out" 2>&1 || { cat "$tmp/out"; wrong "boundary's own workflows failed"; }
@@ -197,6 +230,44 @@ jobs:
 EOF
 fails deep-indent "jobs indented four spaces, keys eight"
 
+# From the second, independent attack.
+workflow not-a-label <<'EOF'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest-arm
+    env:
+      T: ${{ secrets.T }}
+    steps:
+      - run: ./deploy.sh
+EOF
+fails not-a-label "a label shaped like GitHub's that GitHub doesn't have"
+
+workflow include-expr <<'EOF'
+jobs:
+  deploy:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        include: ${{ fromJSON(vars.EXTRA) }}
+    runs-on: ${{ matrix.os }}
+    env: {T: "${{ secrets.T }}"}
+    steps: [{run: ./deploy.sh}]
+EOF
+fails include-expr "a matrix include written as an expression"
+
+workflow include-expr-entry <<'EOF'
+jobs:
+  deploy:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        include: ["${{ fromJSON(vars.EXTRA) }}"]
+    runs-on: ${{ matrix.os }}
+    env: {T: "${{ secrets.T }}"}
+    steps: [{run: ./deploy.sh}]
+EOF
+fails include-expr-entry "a matrix include whose entry is an expression"
+
 # --- Fails: reusable workflows ---
 
 workflow remote-inherit <<'EOF'
@@ -215,6 +286,15 @@ jobs:
       T: ${{ secrets.T }}
 EOF
 fails remote-mapping "a secrets mapping to a workflow in another repository"
+
+workflow remote-quoted-braces <<'EOF'
+jobs:
+  deploy:
+    uses: some-org/infra/.github/workflows/deploy.yml@0123456789012345678901234567890123456789
+    secrets:
+      T: "${{ '}}' && secrets.T }}"
+EOF
+fails remote-quoted-braces "a secrets mapping hidden behind }} in a quoted string"
 
 workflow local-call-input <<'EOF'
 jobs:
@@ -276,6 +356,30 @@ jobs:
       - run: ./deploy.sh
 EOF
 fails hash-in-string "a # before the secret inside a quoted string" "secrets.T"
+
+workflow quoted-braces <<'EOF'
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      T: ${{ '}}' && secrets.T }}
+    steps: [{run: ./deploy.sh}]
+EOF
+fails quoted-braces "a }} inside a quoted string before the secret" "secrets.T"
+
+workflow key-expr <<'EOF'
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      ${{ secrets.T }}: x
+    steps:
+      - run: ./deploy.sh
+        env:
+          ${{ secrets.U }}: y
+EOF
+fails key-expr "a secret in a mapping key" "secrets.T"
+grep -qF "secrets.U" "$tmp/out" || { cat "$tmp/out"; wrong "key-expr: the step's key wasn't named"; }
 
 workflow star <<'EOF'
 jobs:

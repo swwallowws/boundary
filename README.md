@@ -161,7 +161,10 @@ and November 2026, with Claude Code and Opus 5.5:
   secret. Its first version read YAML as lines and looked for the word "self-hosted". A fresh
   agent asked to get a secret past it found 20 ways, from a custom runner label to YAML anchors,
   and 3 ordinary workflows it failed wrongly. It now parses the YAML and treats every runner
-  that isn't a GitHub-hosted label as self-hosted. All 23 are test cases.
+  that isn't a GitHub-hosted label as self-hosted. A second, independent attack on that version
+  found 4 more (a `}}` inside a quoted string, a secret in a mapping key, a matrix `include`
+  written as an expression, and label patterns looser than GitHub's own list) and 2 wrong
+  failures. Every one is a test case.
 
 These are anecdotes from one author's work. Nothing here is a controlled measurement.
 
