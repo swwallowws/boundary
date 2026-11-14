@@ -37,7 +37,8 @@ the notes live, names, writing style.
 
 - Prefer small reusable scripts over long inline one-liners for anything non-trivial.
 - Build in the main session, with short updates as you go. A fresh agent reviews between tasks
-  or after them: give it the code and the requirement, without your conclusion. Ask before
+  or after them: give it the code and the requirement, without your conclusion. Waiting on CI
+  and cleaning up go to a background agent without asking (see Finishing). Ask before
   delegating anything else.
 - One session per checkout. Work on a branch in your own worktree. The `user-only` hook turns
   away branch changes in a main checkout.
@@ -54,12 +55,19 @@ the notes live, names, writing style.
 
 ## Finishing
 
+- The user never waits on a check or a cleanup. Hand each one to a background agent, point it at
+  `<boundary>/rules/permissions.md` and go on with the next thing. When it reports back, pass on
+  the state in a line or two.
+  - After a push, the agent runs `wait-ci.mjs` on the commit. Green: give the merge command.
+    Red: say which job failed, with its link.
+  - After the user merges, the agent does the cleanup below and reports what's left.
 - Work isn't done while it leaves things behind. Once it has landed, run
   `<boundary>/scripts/leftovers.sh <checkout>...` on every repository it touched. Remove the
-  worktrees and local branches it lists, stop the servers and background tasks you started and
-  delete your scratch scripts. A worktree it says holds ignored files gets a look first, since
-  removing it deletes them. Deleting a branch on origin is a push, so give the user those
-  commands. Say it's done when the script prints "nothing left" for each repository.
+  worktrees and local branches this work made, stop the servers and background tasks you started
+  and delete your scratch scripts. Leave other sessions' items alone and list them in the report.
+  A worktree it says holds ignored files gets a look first, since removing it deletes them.
+  Deleting a branch on origin is a push, so give the user those commands. Say it's done when the
+  script prints "nothing left" for each repository, or when all it lists belongs to other work.
 
 ## Specs
 
