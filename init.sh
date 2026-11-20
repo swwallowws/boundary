@@ -22,7 +22,8 @@ settings=$(jq -n --arg b "$boundary" '{
     PreToolUse: [
       { matcher: "Bash", hooks: [
         { type: "command", command: ("\"" + $b + "/hooks/no-prompts.sh\"") },
-        { type: "command", command: ("\"" + $b + "/hooks/user-only.sh\"") }
+        { type: "command", command: ("\"" + $b + "/hooks/user-only.sh\"") },
+        { type: "command", command: ("\"" + $b + "/hooks/public-posts.sh\"") }
       ] },
       { matcher: "Bash|Read|Edit|Write|NotebookEdit|Grep|Glob|WebFetch|mcp__.*", hooks: [
         { type: "command", command: ("\"" + $b + "/hooks/private-paths.sh\"") }

@@ -11,10 +11,11 @@ the setup that keeps the hooks themselves out of an agent's reach.
 | 2. Lists that follow `git -C`, worktrees and a repo's own main | done (#1, #2, #4) |
 | 3. Hooks that start on any machine | done (#3) |
 | 4. Lint for the hooks | done (#5) |
+| 5. Posts on public repositories | in review (#8) |
 
 ## Today
 
-Three PreToolUse hooks (`hooks/no-prompts.sh`, `hooks/user-only.sh`, `hooks/private-paths.sh`)
+Four PreToolUse hooks (`hooks/no-prompts.sh`, `hooks/user-only.sh`, `hooks/public-posts.sh`, `hooks/private-paths.sh`)
 read the command or the path a tool names and exit 2 to block. What only the user runs and what
 stays private are listed per project in `.claude/user-only`, `.claude/user-only.repo` and
 `.claude/private-paths`. A workspace runs the hooks from a pinned clone that changes only when the
@@ -53,6 +54,8 @@ user pulls it.
 - R13. A workspace runs the hooks from a pinned copy only the user updates. Check: manual: the workspace's own probes of its wiring, since the pinned copy lives outside this repo
 - R14. A hook that can't read its call refuses it. Check: the "Without jq" case in each hook's test file
 - R15. `merge-when-green.sh` merges only once every run on the pull request's head is green, with a merge commit, and keeps a branch another open pull request is based on. A repository with no workflows merges with a note that nothing checked it. Check: `scripts/merge-when-green.test.sh`
+- R16. What anyone could read on a public GitHub repository is the user's to post: issues, pull requests and releases (made, edited, commented on, reviewed, closed with a comment), writes to them through `gh api` and GraphQL mutations, a public gist, a repository made or turned public, and pushes to a public GitHub remote. The same on a private repository, and reads, stay open. Check: `hooks/public-posts.test.sh`
+- R17. The public-posts hook refuses when it can't tell whether a repository is public, and names that as the reason, apart from "is public". Check: `hooks/public-posts.test.sh` ("Can't tell", and the `public` helper)
 
 ## Passes
 
@@ -60,3 +63,4 @@ user pulls it.
 2. Lists that follow the work: R3, R4, R5, R7
 3. Hooks that start on any machine: R2, R10, R14
 4. Lint for the hooks: R11
+5. Posts on public repositories: R16, R17

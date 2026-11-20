@@ -23,7 +23,8 @@ for; this file is for working on it.
   (`./test.sh` runs spec-checks on every `docs/*/README.md`)
 - `templates/design.md`: the design-doc shape; `scripts/spec-checks.sh` (with its test) checks
   every requirement names a check
-- `hooks/<name>.sh` and `hooks/<name>.test.sh`: each hook with its cases
+- `hooks/<name>.sh` and `hooks/<name>.test.sh`: each hook with its cases (no-prompts, user-only,
+  public-posts, private-paths)
 - `scripts/`: `wait-ci.mjs` (CI before "done"), `leftovers.sh` (nothing left behind after
   "done"), `link-status.sh` and `check-layout.mjs` (a page holds still while it's used; its test
   pages are in `scripts/check-layout/`), `check-migrations.mjs` and `check-modules.mjs` (checks a

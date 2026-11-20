@@ -70,17 +70,28 @@ the notes live, names, writing style.
   each issue it finishes.
 - Each project gets an audit about monthly, or sooner after many merges:
   `<boundary>/scripts/audit-due.sh <owner/repo>` says when. Fresh agents read its parts with
-  `<boundary>/templates/audit.md`. Each finding is checked against the code, the user chooses
-  what to keep and each kept finding becomes an issue labelled `audit`.
+  `<boundary>/templates/audit.md`. Each finding is checked against the code and the user chooses
+  what to keep. The audit gets a record issue labelled `audit`, and each kept finding its own.
+
+## Public repositories
+
+- Everything in a public repository can be read by anyone: its issues, pull requests, comments,
+  releases and every pushed commit's message and code. Keep personal details out of them. A
+  security finding goes to the user only, never into an issue.
+- Posting there is the user's. Write the text to a file, show it to them and give them the
+  command. The `public-posts` hook turns away issues, pull requests, comments, releases, public
+  gists, repositories made public and pushes on a public GitHub repository, and refuses when it
+  can't tell.
 
 ## CI
 
 - A repository with database migrations runs
   `node <boundary>/scripts/check-migrations.mjs <folder> <base>` in CI: an applied migration may
-  only be added to.
+  only be added to. `<base>` is `HEAD^1` on a pull request (GitHub's merge commit) and
+  `github.event.before` on a push, with `fetch-depth: 0` on the checkout.
 - A repository with JavaScript modules that run in a browser runs
   `node <boundary>/scripts/check-modules.mjs <folder>...` in CI, so a page no test imports still
-  has to parse.
+  has to parse. Give it folders of modules only: it reads every `.js` file as a module.
 
 ## Specs
 

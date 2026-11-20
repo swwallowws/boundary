@@ -12,11 +12,17 @@
 // (`fetch-depth: 0`).
 
 import { execFileSync } from "node:child_process";
+import { statSync } from "node:fs";
 
 const [folder, base] = process.argv.slice(2);
 if (!folder) {
   console.error("usage: node check-migrations.mjs <folder> <base>");
   process.exit(2);
+}
+// A folder that isn't there (a typo in the CI line) would make this a check that never fails.
+if (!statSync(folder, { throwIfNoEntry: false })?.isDirectory()) {
+  console.error(`migrations: no folder ${folder}`);
+  process.exit(1);
 }
 if (!base || /^0+$/.test(base)) {
   console.log(`migrations: no base commit, nothing checked in ${folder}`);

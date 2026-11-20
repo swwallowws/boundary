@@ -40,5 +40,9 @@ preferences and anything you can't point to.
   which are the reviewers' reading.
 - Give the user the list, numbered, with a recommendation: which to fix, in what groups, and
   which way to go where two clients differ.
-- File what the user wants kept as issues labelled `audit`, one per finding, so the next
-  `audit-due.sh` counts from them.
+- File one issue labelled `audit` for the audit itself ("Audit, <date>": the parts read, the
+  findings in a line each and what the user chose), even when nothing is kept. `audit-due.sh`
+  counts from the newest `audit` issue, so an audit with no record reads as never run.
+- File each finding the user keeps as its own issue labelled `audit`.
+- In a public repository, anyone can read its issues. A security finding goes to the user only,
+  never into an issue, and no issue carries personal details.

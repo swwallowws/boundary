@@ -16,7 +16,7 @@ cat >"$tmp/bin/gh" <<'EOF'
 echo "$*" >>"$GH_LOG"
 case "$1 $2" in
   "issue list") cat "$GH_ISSUES" ;;
-  "pr list") cat "$GH_PRS" ;;
+  "pr list") [ -z "$GH_PRS_FAIL" ] || { echo "HTTP 502" >&2; exit 1; }; cat "$GH_PRS" ;;
   *) echo "unexpected gh call: $*" >&2; exit 1 ;;
 esac
 EOF
@@ -50,11 +50,28 @@ due "5 days, 20 pull requests" "20 merged pull requests"
 audit 5 3
 not_due "5 days, 3 pull requests"
 
+audit 30 0
+due "exactly 30 days" "30 days since the last audit"
+
+audit 29 14
+not_due "29 days, 14 pull requests"
+
+# A failed read of the pull requests is never taken for none merged.
+audit 5 3
+GH_PRS_FAIL=1 "$script" o/r >"$tmp/out" 2>&1
+[ $? -eq 2 ] || { cat "$tmp/out"; wrong "a failed pull request read didn't exit 2"; }
+grep -qF "can't read o/r's pull requests" "$tmp/out" || { cat "$tmp/out"; wrong "a failed pull request read didn't say so"; }
+
+"$script" o/r abc >"$tmp/out" 2>&1
+[ $? -eq 2 ] || wrong "a limit that isn't a number didn't exit 2"
+
 # The limits can be set: a busy project audits sooner.
 audit 5 3
 "$script" o/r 30 3 >"$tmp/out" 2>&1 && wrong "3 pull requests with a limit of 3 said not due"
 
 grep -qF -- "--label audit" "$GH_LOG" || wrong "the last audit wasn't found by its label"
+# Audit issues close once done: closed ones must count, or every audit reads as never run.
+grep -qF -- "--state all" "$GH_LOG" || wrong "closed audit issues weren't read"
 grep -qF -- "merged:>=" "$GH_LOG" || wrong "pull requests weren't counted from the last audit"
 
 "$script" >"$tmp/out" 2>&1

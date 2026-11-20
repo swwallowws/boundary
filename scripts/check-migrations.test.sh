@@ -73,6 +73,10 @@ g commit -q -am edit
 passes "an all-zero base checks nothing" 0000000000000000000000000000000000000000
 grep -qF "nothing checked" "$tmp/out" || { cat "$tmp/out"; wrong "first-push didn't say it checked nothing"; }
 
+repo misnamed
+(cd "$r" && node "$script" db/migration main) >"$tmp/out" 2>&1 && wrong "a folder that isn't there passed"
+grep -qF "no folder db/migration" "$tmp/out" || { cat "$tmp/out"; wrong "misnamed didn't name the folder"; }
+
 repo unknown-base
 check deadbeef && wrong "an unknown base passed"
 grep -qF "can't compare" "$tmp/out" || { cat "$tmp/out"; wrong "unknown-base didn't say why"; }

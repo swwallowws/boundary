@@ -18,6 +18,7 @@ There is nothing to install. Clone it once and point your projects at it.
 | `templates/AGENTS.md` | A repo's map, the rules a change can break with no visible error and the checks to run per path. |
 | `hooks/no-prompts.sh` | Turns away commands that would stop on a prompt (heredocs, `$(...)`, env-var prefixes...) before the prompt reaches you. |
 | `hooks/user-only.sh` | Turns away what only you do (merging, plus the deploys and releases a project lists) and branch changes in a checkout another session may share. |
+| `hooks/public-posts.sh` | Turns away what anyone could read on a public GitHub repository (issues, pull requests, comments, releases, a public gist, a repository made public, pushes) and hands it to you, and refuses when it can't tell whether a repository is public. |
 | `hooks/private-paths.sh` | Turns away the usual ways an agent reaches data a project keeps from it, including searches that reach it without naming it. |
 | `templates/design.md` | A design doc for a step that's hard to reverse or spans sessions: today, design, requirements that each name their check, passes, status. |
 | `scripts/spec-checks.sh` | Lists a design doc's requirements that name no check. Fails if there are any. |
@@ -37,8 +38,9 @@ macOS.
 ## Setup
 
 Needs `bash`, `git` and `jq`. Without `jq` the hooks refuse every call, since they can't read
-them. `scripts/wait-ci.mjs` also needs `node` and a signed-in `gh`; `scripts/link-status.sh`
-needs `curl`.
+them. `hooks/public-posts.sh`, `scripts/wait-ci.mjs` and `scripts/audit-due.sh` also need a
+signed-in `gh` (without it, posts and pushes to GitHub are refused), and the scripts `node`;
+`scripts/link-status.sh` needs `curl`.
 
 Clone boundary to a place agents treat as yours and run the hooks from there. That clone changes
 only when you pull it, so an agent's edit can't change a guard without your review:
@@ -180,6 +182,12 @@ and November 2026, with Claude Code and Opus 5.5:
   `node --check`, which passes a broken file with an `import` or `export` when no package says
   `"type": "module"`. A fresh review showed it with a one-line broken file. `check-modules.mjs`
   reads each file as a module and its test holds that file.
+- **A rule that was safe only in the repository it was checked in.** Moving a project's work to
+  GitHub issues, the agent checked that project was private before saying nothing personal would
+  go public, then wrote the rule for every project, public ones included. A second agent caught it.
+  `public-posts.sh` now asks GitHub before anything is posted or pushed and hands posts on a public
+  repository to you. Its first test passed with the public check taken out, since "can't tell"
+  blocks too; the cases now check the reason.
 - **A test that passed without its fix.** A new test for a lighter sync went through a path where
   an older trim dropped the same rows, so it passed with the fix removed. A fresh review caught it.
   The rule now: run a fix's test once with the fix taken out.
@@ -199,6 +207,8 @@ These are anecdotes from one author's work. Nothing here is a controlled measure
   folder above these. `.claude/private-paths` lists are read from the session's folder and the
   repository the session runs in, with the folders above them. So a Read of one project's files
   from a session started in another isn't covered.
+- `public-posts.sh` knows GitHub only. A remote on another host isn't checked, and a post made
+  another way (a script, the GitHub website, `curl` to the API) isn't seen.
 - Pushes are matched by their text too. A protected main on GitHub holds against every spelling
   of a push; a list holds against the spellings its pattern knows.
 - The rules files are still instructions. Only the hooks and tests are enforced.
