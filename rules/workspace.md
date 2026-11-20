@@ -10,6 +10,8 @@ the notes live, names, writing style.
   breaks, let me know". Either it's worth verifying now or it's not worth raising.
 - Verify everything a script can check before asking the user to try something. Then ask for at
   most one short check with exact paths.
+- A test written for a fix must fail without it. Run it once with the fix taken out and say that
+  it failed. A test that passes either way guards nothing.
 - Never say something works until the CI for that push has passed:
   `node <boundary>/scripts/wait-ci.mjs --sha <commit> <owner/repo>`. If a repo has no CI or CI
   didn't run on that change, say so.
@@ -60,6 +62,25 @@ the notes live, names, writing style.
   delete your scratch scripts. A worktree it says holds ignored files gets a look first, since
   removing it deletes them. Deleting a branch on origin is a push, so give the user those
   commands. Say it's done when the script prints "nothing left" for each repository.
+
+## Issues and audits
+
+- Work is tracked in the repository's GitHub issues: one issue per piece of work, opened when it
+  becomes work (ideas stay in the user's notes until then). A pull request says `Closes #<n>` for
+  each issue it finishes.
+- Each project gets an audit about monthly, or sooner after many merges:
+  `<boundary>/scripts/audit-due.sh <owner/repo>` says when. Fresh agents read its parts with
+  `<boundary>/templates/audit.md`. Each finding is checked against the code, the user chooses
+  what to keep and each kept finding becomes an issue labelled `audit`.
+
+## CI
+
+- A repository with database migrations runs
+  `node <boundary>/scripts/check-migrations.mjs <folder> <base>` in CI: an applied migration may
+  only be added to.
+- A repository with JavaScript modules that run in a browser runs
+  `node <boundary>/scripts/check-modules.mjs <folder>...` in CI, so a page no test imports still
+  has to parse.
 
 ## Specs
 

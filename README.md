@@ -26,6 +26,9 @@ There is nothing to install. Clone it once and point your projects at it.
 | `scripts/merge-when-green.sh` | Merges a pull request once its CI is green, keeping a branch another pull request builds on. Yours to run: the hook turns it away from agents. |
 | `scripts/check-workflows.mjs` | Fails when a GitHub Actions job that may run on a self-hosted runner is given a secret, since a runner kept between jobs lets one job's leftovers read the next one's. Any runner that isn't a GitHub-hosted label counts as self-hosted. Run it in each repository's CI. Reads YAML with a vendored parser (`scripts/vendor/`). |
 | `scripts/leftovers.sh` | Lists what landed work left behind (worktrees, local branches, branches on origin) with the command that removes each. Fails while anything is left. |
+| `scripts/check-migrations.mjs` | Fails when a change edits, removes or renames a database migration that already exists, since a live database has run it. Run it in CI. |
+| `scripts/check-modules.mjs` | Fails when a JavaScript module doesn't parse, including pages no test imports. Run it in CI. |
+| `templates/audit.md`, `scripts/audit-due.sh` | The brief fresh agents audit a project with, and the script that says when the next audit is due (monthly, or after 15 merged pull requests). |
 | `init.sh` | Sets a project up: an `AGENTS.md` from the template and the hooks in `.claude/settings.json`. Never overwrites. |
 
 Every hook has its test cases next to it. `./test.sh` runs them all. CI runs them on Linux and
@@ -165,6 +168,21 @@ and November 2026, with Claude Code and Opus 5.5:
   found 4 more (a `}}` inside a quoted string, a secret in a mapping key, a matrix `include`
   written as an expression, and label patterns looser than GitHub's own list) and 2 wrong
   failures. Every one is a test case.
+- **An audit that found what reviews of each change didn't.** Three fresh agents read one app's
+  server, phone and desk side by side and found 30 things that reviews of single pull requests
+  had let through: logged sets wiped by a follow-up message, a filter that failed open, places
+  where the phone and the desk behaved differently. `templates/audit.md` is their brief, and
+  `audit-due.sh` says when the next audit is due.
+- **A migration rule held only by a note.** The repository's rules said never to edit an applied
+  migration, since the live server won't start; the only check was a `git diff` to remember.
+  `check-migrations.mjs` is that check in CI.
+- **A syntax check that could never fail.** The first CI check that every desk page parses used
+  `node --check`, which passes a broken file with an `import` or `export` when no package says
+  `"type": "module"`. A fresh review showed it with a one-line broken file. `check-modules.mjs`
+  reads each file as a module and its test holds that file.
+- **A test that passed without its fix.** A new test for a lighter sync went through a path where
+  an older trim dropped the same rows, so it passed with the fix removed. A fresh review caught it.
+  The rule now: run a fix's test once with the fix taken out.
 
 These are anecdotes from one author's work. Nothing here is a controlled measurement.
 
