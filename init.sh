@@ -42,4 +42,5 @@ else
 fi
 
 echo "optional: list deploys and releases in .claude/user-only, private data in .claude/private-paths"
-echo "(formats at the top of $boundary/hooks/user-only.sh and private-paths.sh)"
+echo "and words never to post on a public repository in .claude/private-words"
+echo "(formats at the top of $boundary/hooks/user-only.sh, private-paths.sh and public-posts.sh)"

@@ -18,7 +18,7 @@ There is nothing to install. Clone it once and point your projects at it.
 | `templates/AGENTS.md` | A repo's map, the rules a change can break with no visible error and the checks to run per path. |
 | `hooks/no-prompts.sh` | Turns away commands that would stop on a prompt (heredocs, `$(...)`, env-var prefixes...) before the prompt reaches you. |
 | `hooks/user-only.sh` | Turns away what only you do (merging, plus the deploys and releases a project lists) and branch changes in a checkout another session may share. |
-| `hooks/public-posts.sh` | Turns away what anyone could read on a public GitHub repository (issues, pull requests, comments, releases, a public gist, a repository made public, pushes) and hands it to you, and refuses when it can't tell whether a repository is public. |
+| `hooks/public-posts.sh` | Reads what would go out on a public GitHub repository (issues, pull requests, comments, the commits a push adds) and turns it away when it holds a private word: your home folder's path or a line of `.claude/private-words`. Releases, public gists and making a repository public stay yours. Refuses when it can't tell whether a repository is public. |
 | `hooks/private-paths.sh` | Turns away the usual ways an agent reaches data a project keeps from it, including searches that reach it without naming it. |
 | `templates/design.md` | A design doc for a step that's hard to reverse or spans sessions: today, design, requirements that each name their check, passes, status. |
 | `scripts/spec-checks.sh` | Lists a design doc's requirements that name no check. Fails if there are any. |
@@ -185,9 +185,9 @@ and November 2026, with Claude Code and Opus 5.5:
 - **A rule that was safe only in the repository it was checked in.** Moving a project's work to
   GitHub issues, the agent checked that project was private before saying nothing personal would
   go public, then wrote the rule for every project, public ones included. A second agent caught it.
-  `public-posts.sh` now asks GitHub before anything is posted or pushed and hands posts on a public
-  repository to you. Its first test passed with the public check taken out, since "can't tell"
-  blocks too; the cases now check the reason.
+  `public-posts.sh` now asks GitHub before anything is posted or pushed, and on a public
+  repository reads it for private words first. Its first test passed with the public check taken
+  out, since "can't tell" blocks too: every blocked case now checks its reason.
 - **A test that passed without its fix.** A new test for a lighter sync went through a path where
   an older trim dropped the same rows, so it passed with the fix removed. A fresh review caught it.
   The rule now: run a fix's test once with the fix taken out.
@@ -208,7 +208,10 @@ These are anecdotes from one author's work. Nothing here is a controlled measure
   repository the session runs in, with the folders above them. So a Read of one project's files
   from a session started in another isn't covered.
 - `public-posts.sh` knows GitHub only. A remote on another host isn't checked, and a post made
-  another way (a script, the GitHub website, `curl` to the API) isn't seen.
+  another way (a script, the GitHub website, `curl` to the API) isn't seen. It finds the words
+  you list, as written: a name spelled another way, split by an escape (`Jane\ Doe`) or a security
+  finding in plain words gets through. It reads only commits the checkout knows the remote
+  lacks, so fetch before pushing.
 - Pushes are matched by their text too. A protected main on GitHub holds against every spelling
   of a push; a list holds against the spellings its pattern knows.
 - The rules files are still instructions. Only the hooks and tests are enforced.

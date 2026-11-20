@@ -54,8 +54,9 @@ user pulls it.
 - R13. A workspace runs the hooks from a pinned copy only the user updates. Check: manual: the workspace's own probes of its wiring, since the pinned copy lives outside this repo
 - R14. A hook that can't read its call refuses it. Check: the "Without jq" case in each hook's test file
 - R15. `merge-when-green.sh` merges only once every run on the pull request's head is green, with a merge commit, and keeps a branch another open pull request is based on. A repository with no workflows merges with a note that nothing checked it. Check: `scripts/merge-when-green.test.sh`
-- R16. What anyone could read on a public GitHub repository is the user's to post: issues, pull requests and releases (made, edited, commented on, reviewed, closed with a comment), writes to them through `gh api` and GraphQL mutations, a public gist, a repository made or turned public, and pushes to a public GitHub remote. The same on a private repository, and reads, stay open. Check: `hooks/public-posts.test.sh`
-- R17. The public-posts hook refuses when it can't tell whether a repository is public, and names that as the reason, apart from "is public". Check: `hooks/public-posts.test.sh` ("Can't tell", and the `public` helper)
+- R16. On a public GitHub repository, issues and pull requests (made, edited, commented on, reviewed, closed with a comment), writes to them through `gh api` and GraphQL mutations, and pushes go out only when what they send holds no private word: the home folder's path or a line of a `.claude/private-words` list, ignoring case. That is their text and the files they hand over, and for a push the messages and changes of the commits the remote doesn't have yet. On a private repository, and for reads, nothing is checked. Check: `hooks/public-posts.test.sh`
+- R17. Releases on a public repository, public gists and repositories made or turned public are always the user's. Check: `hooks/public-posts.test.sh` ("Always the user's")
+- R18. The public-posts hook refuses when it can't tell whether a repository is public, and each refusal names its reason. Check: `hooks/public-posts.test.sh` (every blocked case checks its reason)
 
 ## Passes
 
@@ -63,4 +64,4 @@ user pulls it.
 2. Lists that follow the work: R3, R4, R5, R7
 3. Hooks that start on any machine: R2, R10, R14
 4. Lint for the hooks: R11
-5. Posts on public repositories: R16, R17
+5. Posts on public repositories: R16, R17, R18
