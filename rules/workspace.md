@@ -76,13 +76,17 @@ the notes live, names, writing style.
 ## Public repositories
 
 - Everything in a public repository can be read by anyone: its issues, pull requests, comments,
-  releases and every pushed commit's message and code. Keep personal details out of them. A
-  security finding goes to the user only, never into an issue.
-- Issues, pull requests and pushes for work agreed with the user go out as on any repository.
-  The `public-posts` hook reads them first and turns them away when they hold a private word:
-  the home folder's path or a line of a `.claude/private-words` list. Releases, public gists and
-  making a repository public stay the user's. It refuses when it can't tell whether a
-  repository is public.
+  releases and every pushed commit's message and code. What goes there says what the change does
+  and nothing else: no other project's details, nothing from conversations with the user, no
+  personal detail, nothing that reveals more than the change needs. A security finding goes to
+  the user only, never into an issue.
+- Issues, pull requests and pushes for work agreed with the user go out as on any repository,
+  their text from files (`--body-file`) and one named branch per push. The `public-posts` hook
+  reads them whole first and turns them away when they hold a private word (the home folder's
+  path or a line of a `.claude/private-words` list) or come in a shape it can't read whole.
+  Releases, public gists and making a repository public stay the user's. It refuses when it
+  can't tell whether a repository is public. It catches words, never meaning: the rule above is
+  yours to keep.
 
 ## CI
 

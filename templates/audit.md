@@ -6,8 +6,8 @@ project. Don't give an agent your own view of the code: it reads with fresh eyes
 
 ---
 
-You are auditing one part of <project>: <part, such as "the server in server/", "the phone app in
-ios/", "the desk in desk/">. The repository is at <path>. Read its `AGENTS.md` first: the rules
+You are auditing one part of <project>: <part, such as "the server in server/", "the mobile app
+in app/", "the web client in web/">. The repository is at <path>. Read its `AGENTS.md` first: the rules
 there, and the checks it lists, are what the code is meant to hold.
 
 Read the code of your part, and enough of the others to see where they meet it. Follow
@@ -19,7 +19,7 @@ Look for, in this order:
 1. **Bugs**: concrete input or state that gives a wrong result, loses data, crashes or leaks
    something private. Name the file and line, the steps that show it and how sure you are
    (checked against the code, or likely from reading).
-2. **Places where two clients behave differently** (a phone and a desk, a server and a client)
+2. **Places where two clients behave differently** (a mobile app and a web app, a server and a client)
    for what should be one behaviour. Say which way each goes.
 3. **Rules that no longer hold**: an `AGENTS.md` rule whose check no longer catches what it
    guards, a check that can't fail, a doc or comment that says something the code doesn't do.

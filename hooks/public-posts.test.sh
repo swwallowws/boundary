@@ -82,6 +82,11 @@ printf 'Steps:\n1. Open the page.\n' >"$ws/clean.md"
 check blocked "$ws" 'gh issue create -R o/open --title x --body-file body.md' "holds \"jane@example.com\""
 check blocked "$ws" "gh issue create -R o/open --title x --body-file $ws/body.md" "$private"
 check allowed "$ws" 'gh issue create -R o/open --title x --body-file clean.md'
+# A name wrapped onto the next line, and a list line with spaces around it.
+printf 'Thanks to Jane\nDoe for the report.\n' >"$ws/wrapped.md"
+check blocked "$ws" 'gh issue create -R o/open --title x --body-file wrapped.md' "$private"
+printf '  Jane   Doe  \n' >>"$ws/.claude/private-words"
+check blocked "$ws" 'gh issue create -R o/open --title x --body "Jane Doe"' "$private"
 # A list's comment lines are no words.
 check allowed "$ws" 'gh issue create -R o/open --title x --body "names, emails, places"'
 # A private repository, and what only reads.
@@ -92,23 +97,58 @@ check allowed "$ws/open" 'gh issue close 4'
 check blocked "$ws" 'gh issue create -R o/unsure --title x' "couldn't tell whether o/unsure is public"
 check blocked "$ws/none" 'gh issue create --title x' "couldn't tell which GitHub repository"
 
-# gh api writes.
-check allowed "$ws" 'gh api -X POST repos/o/open/issues -f title=x -f body=y'
-check blocked "$ws" 'gh api repos/o/open/issues/1/comments -f body="Jane Doe"' "$private"
-check blocked "$ws" 'gh api --method PATCH /repos/o/open/pulls/2 --input body.md' "$private"
-check blocked "$ws/open" 'gh api graphql -f query="mutation { addComment(input: {body: \"Jane Doe\"}) { clientMutationId } }"' "$private"
+# Text the hook can't read whole is refused on a public repository (the attack's holes).
+check blocked "$ws" 'gh issue create -R o/open --title x --body "$(cat body.md)"' "can't read"
+check blocked "$ws" 'gh issue create -R o/open --title x --body-file - < body.md' "can't read"
+check blocked "$ws" 'cat body.md | gh issue create -R o/open --title x -F -' "can't read"
+check blocked "$ws" 'gh issue create -R o/open --title x --body-file missing.md' "can't be read"
+# A body on later lines, and a quoted ; or | before the word: the whole command is read.
+check blocked "$ws" 'gh pr create -R o/open --title x --body "Steps:
+1. ask Jane Doe"' "$private"
+check blocked "$ws" 'gh issue create -R o/open --title x --body "| col | who |; Jane Doe"' "$private"
+check blocked "$ws" 'gh issue create -R o/open --title x --body "a && b fixed, thanks Jane Doe"' "$private"
+check blocked "$ws" 'gh issue create -R o/open --title x -T body.md' "$private"
+# gh's aliases.
+check blocked "$ws" 'gh issue new -R o/open --title "Jane Doe"' "$private"
+check blocked "$ws/open" 'gh pr new --title "Jane Doe"' "$private"
+# gh's ways of choosing the repository.
+check blocked "$ws/closed" 'GH_REPO=o/open gh issue create --title "Jane Doe"' "$private"
+check blocked "$ws/closed" 'export GH_REPO=o/open; gh issue create --title "Jane Doe"' "$private"
+r=closed
+g remote add upstream https://github.com/o/open.git
+g config remote.upstream.gh-resolved base
+check blocked "$ws/closed" 'gh pr comment 3 --body "Jane Doe"' "$private"
+g remote remove upstream
+# Labels and a repository's description.
+check blocked "$ws" 'gh label create "Jane Doe" -R o/open' "$private"
+check blocked "$ws" 'gh repo edit o/open --description "for Jane Doe"' "$private"
+check allowed "$ws" 'gh repo edit o/open --description "Rules that allow freedom"'
+
+# gh api writes: refused on a public repository, whatever they say; GraphQL writes anywhere.
+check blocked "$ws" 'gh api -X POST repos/o/open/issues -f title=x -f body=y' "use gh issue or gh pr"
+check blocked "$ws" 'gh api repos/o/open/commits/abc/comments -f body=x' "use gh issue or gh pr"
+check blocked "$ws" 'gh api -X PUT repos/o/open/contents/notes.md -f content=x' "use gh issue or gh pr"
+check blocked "$ws/open" 'gh api repos/{owner}/{repo}/issues -f title=x' "use gh issue or gh pr"
+check blocked "$ws/closed" 'gh api graphql -f query="mutation { addComment(input: {}) { clientMutationId } }"' "GraphQL write"
+check blocked "$ws/closed" 'gh api graphql -F query=@q.graphql' "GraphQL write"
+check blocked "$ws" 'gh api -X PATCH repos/o/closed -f visibility=public' "turning a repository public"
+check blocked "$ws" 'gh api -X POST gists -F public=true -F files[a.md][content]=x' "public gist"
 check allowed "$ws" 'gh api repos/o/open/issues'
+check allowed "$ws/open" 'gh api graphql -f query="query { viewer { login } }"'
 check allowed "$ws" 'gh api -X POST repos/o/closed/issues -f body="Jane Doe"'
+check allowed "$ws/closed" 'gh api repos/{owner}/{repo}/issues -f title=x'
 
 # Always the user's: releases on a public repository, public gists and repositories.
 check blocked "$ws/open" 'gh release create v1 --notes x' "A release there is the user's"
+check blocked "$ws/open" 'gh release new v1 --notes x' "A release there is the user's"
 check blocked "$ws" 'gh release edit v1 -R o/open --notes x' "A release there is the user's"
-check blocked "$ws" 'gh api -X POST repos/o/open/releases -f tag_name=v1' "A release there is the user's"
 check allowed "$ws/closed" 'gh release create v1 --notes x'
 check blocked "$ws" 'gh gist create --public notes.md' "public gist"
 check blocked "$ws" 'gh gist create -p notes.md' "public gist"
+check blocked "$ws" 'gh gist new --public=true notes.md' "public gist"
 check allowed "$ws" 'gh gist create notes.md'
 check blocked "$ws" 'gh repo create o/new --public' "public repository"
+check blocked "$ws" 'gh repo new o/new --public' "public repository"
 check blocked "$ws" 'gh repo edit o/closed --visibility public' "public repository"
 check allowed "$ws" 'gh repo create o/new --private'
 
@@ -139,6 +179,20 @@ g commit -q --allow-empty -m "codename falcon"
 g switch -q work
 check allowed "$ws/open" 'git push origin work'
 check blocked "$ws/open" 'git push origin side:side' "holds \"codename falcon\""
+check blocked "$ws/open" 'git push -o ci.skip origin side' "holds \"codename falcon\""
+check blocked "$ws" "git -C $ws/open push origin side" "holds \"codename falcon\""
+check blocked "$ws/open" 'git push https://github.com/o/open.git side' "holds \"codename falcon\""
+# Shapes that send more than the hook reads, or that it can't read: refused.
+check blocked "$ws/open" 'git push --all origin' "Push one named branch"
+check blocked "$ws/open" 'git push --mirror origin' "Push one named branch"
+check blocked "$ws/open" 'git push origin --tags' "Push one named branch"
+g tag v9 side
+check blocked "$ws/open" 'git push origin v9' "is a tag"
+check blocked "$ws/open" 'git push origin tag v9' "Push one named branch"
+check blocked "$ws/open" 'git push origin "refs/heads/*:refs/heads/*"' "Push one named branch"
+check blocked "$ws/open" 'git push origin nosuchbranch' "can't read what nosuchbranch is"
+# A deletion sends nothing.
+check allowed "$ws/open" 'git push origin --delete side'
 # A private repository, another host, and a remote that can't be read.
 r=closed
 g commit -q --allow-empty -m "Jane Doe"
