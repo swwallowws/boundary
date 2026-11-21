@@ -10,6 +10,8 @@ the notes live, names, writing style.
   breaks, let me know". Either it's worth verifying now or it's not worth raising.
 - Verify everything a script can check before asking the user to try something. Then ask for at
   most one short check with exact paths.
+- A test written for a fix must fail without it. Run it once with the fix taken out and say that
+  it failed. A test that passes either way guards nothing.
 - Never say something works until the CI for that push has passed:
   `node <boundary>/scripts/wait-ci.mjs --sha <commit> <owner/repo>`. If a repo has no CI or CI
   didn't run on that change, say so.
@@ -60,6 +62,41 @@ the notes live, names, writing style.
   delete your scratch scripts. A worktree it says holds ignored files gets a look first, since
   removing it deletes them. Deleting a branch on origin is a push, so give the user those
   commands. Say it's done when the script prints "nothing left" for each repository.
+
+## Issues and audits
+
+- Work is tracked in the repository's GitHub issues: one issue per piece of work, opened when it
+  becomes work (ideas stay in the user's notes until then). A pull request says `Closes #<n>` for
+  each issue it finishes.
+- Each project gets an audit about monthly, or sooner after many merges:
+  `<boundary>/scripts/audit-due.sh <owner/repo>` says when. Fresh agents read its parts with
+  `<boundary>/templates/audit.md`. Each finding is checked against the code and the user chooses
+  what to keep. The audit gets a record issue labelled `audit`, and each kept finding its own.
+
+## Public repositories
+
+- Everything in a public repository can be read by anyone: its issues, pull requests, comments,
+  releases and every pushed commit's message and code. What goes there says what the change does
+  and nothing else: no other project's details, nothing from conversations with the user, no
+  personal detail, nothing that reveals more than the change needs. A security finding goes to
+  the user only, never into an issue.
+- Issues, pull requests and pushes for work agreed with the user go out as on any repository,
+  their text from files (`--body-file`) and one named branch per push. The `public-posts` hook
+  reads them whole first and turns them away when they hold a private word (the home folder's
+  path or a line of a `.claude/private-words` list) or come in a shape it can't read whole.
+  Releases, public gists and making a repository public stay the user's. It refuses when it
+  can't tell whether a repository is public. It catches words, never meaning: the rule above is
+  yours to keep.
+
+## CI
+
+- A repository with database migrations runs
+  `node <boundary>/scripts/check-migrations.mjs <folder> <base>` in CI: an applied migration may
+  only be added to. `<base>` is `HEAD^1` on a pull request (GitHub's merge commit) and
+  `github.event.before` on a push, with `fetch-depth: 0` on the checkout.
+- A repository with JavaScript modules that run in a browser runs
+  `node <boundary>/scripts/check-modules.mjs <folder>...` in CI, so a page no test imports still
+  has to parse. Give it folders of modules only: it reads every `.js` file as a module.
 
 ## Specs
 

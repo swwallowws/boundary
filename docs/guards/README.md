@@ -11,10 +11,11 @@ the setup that keeps the hooks themselves out of an agent's reach.
 | 2. Lists that follow `git -C`, worktrees and a repo's own main | done (#1, #2, #4) |
 | 3. Hooks that start on any machine | done (#3) |
 | 4. Lint for the hooks | done (#5) |
+| 5. Posts on public repositories | in review (#8) |
 
 ## Today
 
-Three PreToolUse hooks (`hooks/no-prompts.sh`, `hooks/user-only.sh`, `hooks/private-paths.sh`)
+Four PreToolUse hooks (`hooks/no-prompts.sh`, `hooks/user-only.sh`, `hooks/public-posts.sh`, `hooks/private-paths.sh`)
 read the command or the path a tool names and exit 2 to block. What only the user runs and what
 stays private are listed per project in `.claude/user-only`, `.claude/user-only.repo` and
 `.claude/private-paths`. A workspace runs the hooks from a pinned clone that changes only when the
@@ -53,6 +54,9 @@ user pulls it.
 - R13. A workspace runs the hooks from a pinned copy only the user updates. Check: manual: the workspace's own probes of its wiring, since the pinned copy lives outside this repo
 - R14. A hook that can't read its call refuses it. Check: the "Without jq" case in each hook's test file
 - R15. `merge-when-green.sh` merges only once every run on the pull request's head is green, with a merge commit, and keeps a branch another open pull request is based on. A repository with no workflows merges with a note that nothing checked it. Check: `scripts/merge-when-green.test.sh`
+- R16. On a public GitHub repository, issues and pull requests (made, edited, commented on, reviewed, closed with a comment, under gh's aliases too), labels, a repository's description and pushes go out only when what they send holds no private word: the home folder's path or a line of a `.claude/private-words` list, ignoring case and line breaks. That is the whole command, every line, the files it hands over, and for a push the messages and changes of the commits the remote doesn't have yet. The repository is found as gh finds it (`-R`, `GH_REPO`, `gh repo set-default`, origin). On a private repository, and for reads, nothing is checked. Check: `hooks/public-posts.test.sh`
+- R17. What the hook can't read whole is refused on a public repository: text from stdin or a command substitution, `gh api` writes, GraphQL mutations, and pushes of everything, tags or patterns. Releases there, public gists and repositories made or turned public are always the user's. Check: `hooks/public-posts.test.sh` ("Text the hook can't read whole", "Always the user's", "Shapes that send more")
+- R18. The public-posts hook refuses when it can't tell whether a repository is public, and each refusal names its reason. Check: `hooks/public-posts.test.sh` (every blocked case checks its reason)
 
 ## Passes
 
@@ -60,3 +64,4 @@ user pulls it.
 2. Lists that follow the work: R3, R4, R5, R7
 3. Hooks that start on any machine: R2, R10, R14
 4. Lint for the hooks: R11
+5. Posts on public repositories: R16, R17, R18

@@ -18,6 +18,7 @@ There is nothing to install. Clone it once and point your projects at it.
 | `templates/AGENTS.md` | A repo's map, the rules a change can break with no visible error and the checks to run per path. |
 | `hooks/no-prompts.sh` | Turns away commands that would stop on a prompt (heredocs, `$(...)`, env-var prefixes...) before the prompt reaches you. |
 | `hooks/user-only.sh` | Turns away what only you do (merging, plus the deploys and releases a project lists) and branch changes in a checkout another session may share. |
+| `hooks/public-posts.sh` | Reads what would go out on a public GitHub repository (issues, pull requests, comments, the commits a push adds) whole and turns it away when it holds a private word (your home folder's path or a line of `.claude/private-words`) or comes in a shape it can't read whole. Releases, public gists and making a repository public stay yours. Refuses when it can't tell whether a repository is public. |
 | `hooks/private-paths.sh` | Turns away the usual ways an agent reaches data a project keeps from it, including searches that reach it without naming it. |
 | `templates/design.md` | A design doc for a step that's hard to reverse or spans sessions: today, design, requirements that each name their check, passes, status. |
 | `scripts/spec-checks.sh` | Lists a design doc's requirements that name no check. Fails if there are any. |
@@ -26,6 +27,9 @@ There is nothing to install. Clone it once and point your projects at it.
 | `scripts/merge-when-green.sh` | Merges a pull request once its CI is green, keeping a branch another pull request builds on. Yours to run: the hook turns it away from agents. |
 | `scripts/check-workflows.mjs` | Fails when a GitHub Actions job that may run on a self-hosted runner is given a secret, since a runner kept between jobs lets one job's leftovers read the next one's. Any runner that isn't a GitHub-hosted label counts as self-hosted. Run it in each repository's CI. Reads YAML with a vendored parser (`scripts/vendor/`). |
 | `scripts/leftovers.sh` | Lists what landed work left behind (worktrees, local branches, branches on origin) with the command that removes each. Fails while anything is left. |
+| `scripts/check-migrations.mjs` | Fails when a change edits, removes or renames a database migration that already exists, since a live database has run it. Run it in CI. |
+| `scripts/check-modules.mjs` | Fails when a JavaScript module doesn't parse, including pages no test imports. Run it in CI. |
+| `templates/audit.md`, `scripts/audit-due.sh` | The brief fresh agents audit a project with, and the script that says when the next audit is due (monthly, or after 15 merged pull requests). |
 | `init.sh` | Sets a project up: an `AGENTS.md` from the template and the hooks in `.claude/settings.json`. Never overwrites. |
 
 Every hook has its test cases next to it. `./test.sh` runs them all. CI runs them on Linux and
@@ -34,8 +38,9 @@ macOS.
 ## Setup
 
 Needs `bash`, `git` and `jq`. Without `jq` the hooks refuse every call, since they can't read
-them. `scripts/wait-ci.mjs` also needs `node` and a signed-in `gh`; `scripts/link-status.sh`
-needs `curl`.
+them. `hooks/public-posts.sh`, `scripts/wait-ci.mjs` and `scripts/audit-due.sh` also need a
+signed-in `gh` (without it, posts and pushes to GitHub are refused), and the scripts `node`;
+`scripts/link-status.sh` needs `curl`.
 
 Clone boundary to a place agents treat as yours and run the hooks from there. That clone changes
 only when you pull it, so an agent's edit can't change a guard without your review:
@@ -165,6 +170,26 @@ and November 2026, with Claude Code and Opus 5.5:
   found 4 more (a `}}` inside a quoted string, a secret in a mapping key, a matrix `include`
   written as an expression, and label patterns looser than GitHub's own list) and 2 wrong
   failures. Every one is a test case.
+- **An audit that found what reviews of each change didn't.** Fresh agents reading a whole
+  project side by side found dozens of things that reviews of single pull requests had let
+  through, some of them real bugs. `templates/audit.md` is their brief, and `audit-due.sh` says
+  when the next audit is due.
+- **A migration rule held only by a note.** A repository's rules said never to edit an applied
+  migration, since the live server won't start; the only check was a `git diff` to remember.
+  `check-migrations.mjs` is that check in CI.
+- **A syntax check that could never fail.** A CI check that every page parses used
+  `node --check`, which passes a broken file with an `import` or `export` when no package says
+  `"type": "module"`. A fresh review showed it with a one-line broken file. `check-modules.mjs`
+  reads each file as a module and its test holds that file.
+- **A rule that was safe only in the repository it was checked in.** A rule to track work in
+  GitHub issues was checked against one private repository and then written for every project,
+  public ones included. A second agent caught it. `public-posts.sh` now asks GitHub before
+  anything is posted or pushed, and on a public repository reads it whole for private words
+  first. An attack on its first version found a dozen honest ways past it, from a body on its
+  second line to gh's own aliases; each is a test case, and shapes it can't read are refused.
+- **A test that passed without its fix.** A new test reached its result through a path where
+  older code gave the same answer, so it passed with the fix removed. A fresh review caught it.
+  The rule now: run a fix's test once with the fix taken out.
 
 These are anecdotes from one author's work. Nothing here is a controlled measurement.
 
@@ -181,6 +206,13 @@ These are anecdotes from one author's work. Nothing here is a controlled measure
   folder above these. `.claude/private-paths` lists are read from the session's folder and the
   repository the session runs in, with the folders above them. So a Read of one project's files
   from a session started in another isn't covered.
+- `public-posts.sh` knows GitHub only. A remote on another host isn't checked, and a post made
+  another way (a script, the GitHub website, `curl` to the API) isn't seen. It finds the words
+  you list, as written: a name spelled another way or split by an escape (`Jane\ Doe`) gets
+  through, and it can't tell a security finding or a detail that reveals too much from any other
+  sentence. It reads only commits the checkout knows the remote lacks, so fetch before pushing.
+  A repository named only by `-R`, with no checkout here, brings no list of its own. A commit
+  message quoting `; gh release create` is refused, on the safe side.
 - Pushes are matched by their text too. A protected main on GitHub holds against every spelling
   of a push; a list holds against the spellings its pattern knows.
 - The rules files are still instructions. Only the hooks and tests are enforced.
