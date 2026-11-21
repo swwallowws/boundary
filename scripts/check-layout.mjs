@@ -58,15 +58,20 @@ if (!chrome) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Starts Chrome with a throwaway profile and returns its DevTools port.
+// Starts Chrome with a throwaway profile and returns its DevTools port. A busy CI runner can take
+// well over ten seconds to start it, so it gets thirty; if it exits first, its last words say why.
 async function launch(profile) {
   const proc = spawn(chrome, [
     "--headless=new", "--no-sandbox", "--disable-gpu-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader",
     "--hide-scrollbars", "--mute-audio", "--no-first-run", "--no-default-browser-check",
     "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank",
-  ], { stdio: "ignore" });
+  ], { stdio: ["ignore", "ignore", "pipe"] });
+  let said = "";
+  proc.stderr.on("data", (d) => { said = (said + d).slice(-2000); });
+  let exited = null;
+  proc.on("exit", (code) => { exited = code; });
   const file = join(profile, "DevToolsActivePort");
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 300 && exited === null; i++) {
     if (existsSync(file)) {
       const port = readFileSync(file, "utf8").split("\n")[0].trim();
       if (port) return { proc, port };
@@ -74,7 +79,8 @@ async function launch(profile) {
     await sleep(100);
   }
   proc.kill();
-  throw new Error("Chrome didn't start");
+  const last = said.trim().split("\n").slice(-3).join("\n  ");
+  throw new Error(`Chrome didn't start${exited === null ? " within 30 s" : ` (it exited with ${exited})`}${last ? `:\n  ${last}` : ""}`);
 }
 
 // One page over the DevTools protocol: send a method, wait for its answer.
