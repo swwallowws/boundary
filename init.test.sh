@@ -11,7 +11,7 @@ wrong() { echo "WRONG: $1"; failed=1; }
 mkdir -p "$tmp/fresh"
 "$boundary/init.sh" "$tmp/fresh" >"$tmp/out" 2>&1 || wrong "init failed on an empty project"
 cmp -s "$boundary/templates/AGENTS.md" "$tmp/fresh/AGENTS.md" || wrong "AGENTS.md isn't the template"
-jq -e --arg b "$boundary" '[.hooks.PreToolUse[].hooks[].command] == [("\"" + $b + "/hooks/no-prompts.sh\""), ("\"" + $b + "/hooks/user-only.sh\""), ("\"" + $b + "/hooks/private-paths.sh\"")]' \
+jq -e --arg b "$boundary" '[.hooks.PreToolUse[].hooks[].command] == [("\"" + $b + "/hooks/no-prompts.sh\""), ("\"" + $b + "/hooks/user-only.sh\""), ("\"" + $b + "/hooks/public-posts.sh\""), ("\"" + $b + "/hooks/private-paths.sh\"")]' \
   "$tmp/fresh/.claude/settings.json" >"$tmp/out" 2>&1 || wrong "settings.json doesn't wire the three hooks"
 
 # A clone whose path has a space: the wired command still runs the hook.
