@@ -16,7 +16,7 @@ There is nothing to install. Clone it once and point your projects at it.
 | `rules/workspace.md` | Working rules for every project: checking, scope, sessions, commits, finishing, specs, where a rule lives, guards and shared docs. Imported by a workspace's `CLAUDE.md`. |
 | `rules/permissions.md` | How to run commands so none of them stops on a permission prompt. |
 | `templates/AGENTS.md` | A repo's map, the rules a change can break with no visible error and the checks to run per path. |
-| `hooks/no-prompts.sh` | Turns away commands that would stop on a prompt (heredocs, `$(...)`, env-var prefixes...) before the prompt reaches you. |
+| `hooks/no-prompts.sh` | Turns away commands that would stop on a prompt (heredocs, `$(...)`, env-var prefixes, commands joined by `&&` or `;`...) before the prompt reaches you. |
 | `hooks/user-only.sh` | Turns away what only you do (merging, plus the deploys and releases a project lists) and branch changes in a checkout another session may share. |
 | `hooks/public-posts.sh` | Reads what would go out on a public GitHub repository (issues, pull requests, comments, the commits a push adds) whole and turns it away when it holds a private word (your home folder's path or a line of `.claude/private-words`) or comes in a shape it can't read whole. Releases, public gists and making a repository public stay yours. Refuses when it can't tell whether a repository is public. |
 | `hooks/private-paths.sh` | Turns away the usual ways an agent reaches data a project keeps from it, including searches that reach it without naming it. |

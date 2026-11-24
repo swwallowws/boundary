@@ -51,6 +51,15 @@ check blocked '/usr/local/bin/node -e "x"'
 check blocked 'git status; node -e "x"'
 check blocked 'deno eval "x"'
 check blocked 'bun -e "x"'
+check blocked 'cd app && git status'
+check blocked 'git status && git log'
+check blocked 'npm test || echo failed'
+check blocked 'git status; git log'
+check blocked 'node check.mjs a.html; echo done'
+check blocked 'git commit -m "a; b" && git push'
+check blocked "git status
+git log"
+check blocked 'ls a;ls b'
 
 check allowed 'python3 scripts/check.py'
 check allowed 'python3 -I scripts/check.py'
@@ -68,6 +77,17 @@ check allowed 'node scripts/check.mjs -e x'
 check allowed 'node --test --test-reporter=dot test/*.test.mjs'
 check allowed 'git commit -m "node -e is blocked now"'
 check allowed 'npm test -- -e'
+check allowed 'git log --oneline | head -5'
+check allowed 'npm test 2>&1'
+check allowed 'git commit -m "a; b && c || d"'
+check allowed "git commit -m 'one; two'"
+check allowed 'find . -name "*.tmp" -exec rm {} \;'
+check allowed 'git commit -m "first line
+
+second paragraph"'
+check allowed "grep -E 'a|b' file.txt"
+check allowed 'git status
+'
 
 # Without jq the hook refuses instead of reading nothing and letting the call through.
 mkdir -p "$tmp/nojq"
