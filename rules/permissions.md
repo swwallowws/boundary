@@ -22,6 +22,8 @@ settings-reference.md.
    lines or to change them: it can touch any file, so it always asks. The hook turns it away.
 3. **One plain command per Bash call.** Compound commands are split at `&&`, `||`, `;`, `|`, `&`
    and newlines. Every part must match an allow rule on its own, so a compound usually prompts.
+   The hook turns away `&&`, `||`, `;` and new lines outside quotes. Send the parts as separate
+   calls; independent ones can go in one message.
    - Never prefix with `cd dir &&`. Use project-relative paths or `git -C <path>`.
    - Never use an env-var prefix (`FOO=1 cmd`). Use a command-line flag instead.
    - Redirect targets (`> file`) are checked separately; write files with the Write tool.

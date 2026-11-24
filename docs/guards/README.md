@@ -46,7 +46,7 @@ user pulls it.
 - R5. A `.repo` list holds for its own repository only, never for projects inside it. Check: `hooks/user-only.test.sh` ("A workspace that is itself a repository")
 - R6. Branches change only in a worktree, never in a main checkout another session may share. Check: `hooks/user-only.test.sh` ("Branch changes in a main checkout")
 - R7. Pushes that could land on boundary's main are the user's: any refspec ending in `main` or `HEAD`. So is a push that names no branch. A named branch stays open. Check: `hooks/user-only.test.sh` ("boundary's own list")
-- R8. The common shapes that stop on a permission prompt are turned away first: inline python, backticks and command substitution, process substitution, heredocs, env-var prefixes anywhere in the command and `/dev/null`. Pipes, `;` and loops aren't caught. Check: `hooks/no-prompts.test.sh`
+- R8. The common shapes that stop on a permission prompt are turned away first: inline python, backticks and command substitution, process substitution, heredocs, env-var prefixes anywhere in the command, `/dev/null`, sed, inline JavaScript and commands joined by `&&`, `||`, `;` or a new line outside quotes. Pipes aren't caught, since a filter can't be sent as its own call. Check: `hooks/no-prompts.test.sh`
 - R9. Private paths are refused when named and when a search could reach them without naming them. Check: `hooks/private-paths.test.sh`
 - R10. Every script starts through `env`, so the hooks start on NixOS. Check: `./test.sh` (first-line check)
 - R11. The hooks pass shellcheck at warning level. Check: CI's shellcheck job

@@ -49,4 +49,16 @@ fi
 if printf '%s' "$command" | grep -q '\$('; then
   refuse "command substitution (\$(...))."
 fi
+# Commands joined by &&, || or ; or on separate lines are checked part by part, so one part
+# without an allow rule (a cd, a read outside the project) makes the whole call ask. Quoted text
+# is only words (a commit message may hold ";" or several lines) and find's \; ends an -exec.
+# Newlines become \001 first so a quoted string over several lines is stripped as one. Pipes
+# are left alone: a filter can't be sent as its own call.
+bare=$(printf '%s' "$command" | tr '\n' '\001' | sed -E "s/'[^']*'//g; s/\"([^\"\\\\]|\\\\.)*\"//g; s/\\\\;//g")
+if printf '%s' "$bare" | grep -Eq '&&|\|\||;'; then
+  refuse "commands joined by &&, || or ; (send each as its own Bash call: independent calls can go in one message; for cd dir && x, use paths or git -C)."
+fi
+if printf '%s' "$bare" | sed -E $'s/\001+$//' | grep -q $'\001'; then
+  refuse "commands on separate lines (send each as its own Bash call)."
+fi
 exit 0
